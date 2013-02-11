@@ -71,7 +71,8 @@ define([
 
                         self.freshen(from, to, newSubset);
 
-                        subsetCollection = self.getSubset(from, to);
+                        subsetCollection = self.getSubset(from, (from+newSubset.length));
+
                         success.call(this, subsetCollection, self);
                         return subsetCollection;
                     },
@@ -138,47 +139,49 @@ define([
         },
 
         freshen: function(from, to, objects) {
-          from = typeof from !== 'undefined' ? from : 0;
-          to = typeof to !== 'undefined' ? to : 20;
+            console.log("Freshen..");
+            from = typeof from !== 'undefined' ? from : 0;
+            to = typeof to !== 'undefined' ? to : 20;
 
-          var model;
-          var self = this;
-          var subset = [];
+            var model;
+            var self = this;
+            var subset = [];
 
-          // get subset of parent collection
-          for (var i = from; i < to; i++) {
-            if (typeof self.at(i) != "undefined") {
-              subset.push(self.at(i));
+            // get subset of parent collection
+            for (var i = from; i < to; i++) {
+                if (typeof self.at(i) != "undefined") {
+                    subset.push(self.at(i));
+                }
             }
-          }
 
-          // remove old models which aren't in new subset
-          if (subset.length > 0) {
-            _(subset).each(function(model) {
-              var findModel = _(_.where(objects, {id: model.id})).first();
-              if (typeof findModel == "undefined") {
-                this.remove(model);
-              }
-            }, this);
-          }
-
-          // add new models and set attributes if already exists
-          _(objects).each(function(attrs) {
+            // remove old models which aren't in new subset
             if (subset.length > 0) {
-              model = this.get(attrs.id);
-              if (model) {
-                // console.log("Updating attributes: "+attrs.name);
-                model.set(attrs); // existing model
-              } else {
-                // console.log("Adding new item: "+attrs.name);
-                this.add(attrs, {
-                  at: from+_(objects).indexOf(model)
-                });
-              }
-            } else {
-              this.add(attrs); // if init collection is empty
+                _(subset).each(function(model) {
+                    var findModel = _(_.where(objects, {id: model.id})).first();
+                    if (typeof findModel == "undefined") {
+                        console.log("Removing: "+model.get("name"));
+                        this.remove(model);
+                    }
+                }, this);
             }
-          }, this);
+
+            // add new models and set attributes if already exists
+            _(objects).each(function(attrs) {
+                if (subset.length > 0) {
+                    model = this.get(attrs.id);
+                    if (model) {
+                        console.log("Updating attributes: "+attrs.name);
+                        console.log("OrderID: "+attrs.orderId);
+                        model.set(attrs); // existing model
+                    } else {
+                        console.log("Adding new item: "+attrs.name);
+                        console.log("OrderID: "+attrs.orderId);
+                        this.add(attrs);
+                    }
+                } else {
+                    this.add(attrs); // if init collection is empty
+                }
+            }, this);
         }
     });
     return UpdatableCollection;
