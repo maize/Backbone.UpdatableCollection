@@ -15,7 +15,6 @@ define([
 
             var updateSubset = typeof options.updateSubset !== 'undefined' ? options.updateSubset : false;
             var updateAll = typeof options.updateAll !== 'undefined' ? options.updateAll : false;
-            var forceUpdate = typeof options.forceUpdate !== 'undefined' ? options.forceUpdate : false;
             
             var getFullCollection = typeof options.getFullCollection !== 'undefined' ? options.getFullCollection : false;
             var numItems = typeof options.numItems !== 'undefined' ? options.numItems : maxLimit;
@@ -40,57 +39,59 @@ define([
                     success.call(this, subsetCollection, self); // give only the subset
                     return subsetCollection;
                 }
-            } else {
-                if (updateSubset) {
-                    console.log("Update subset..");
-                    console.log("From: "+from);
-                    console.log("To: "+to);
+            } else if (updateSubset) {
+                console.log("Update subset..");
+                console.log("From: "+from);
+                console.log("To: "+to);
 
-                    additionalData = {
+                additionalData = {
+                    offset: from,
+                    limit: to
+                }
+
+                $.ajax({
+                    type: 'GET',
+                    url:  self.url(),
+                    data: $.extend({}, data, {
                         offset: from,
-                        limit: to
-                    }
-
-                    $.ajax({
-                        type: 'GET',
-                        url:  self.url(),
-                        data: $.extend({}, data, {
-                            offset: from,
-                            limit: limit
-                        }),
-                        success: function (data) {
-                            var newSubset = JSON.parse(data);
-                            if (typeof newSubset.response.children != "undefined") {
-                                newSubset = newSubset.response.children;
-                            } else {
-                                newSubset = newSubset.response.photos;
-                            }
-
-                            _(newSubset).each(function(obj, index){
-                                obj.orderId = from+index;
-                            });
-                            self.freshen(from, to, newSubset);
-
-                            if (getFullCollection) {
-                                success.call(this, self, self);
-                            } else {
-                                subsetCollection = self.getSubset(from, to);
-                                success.call(this, subsetCollection, self);
-                                return subsetCollection;
-                            }
-                        },
-                        error: function(e) {
-                            error.call(this, e, self);
+                        limit: limit
+                    }),
+                    success: function (data) {
+                        var newSubset = null;
+                        if (data instanceof Object) {
+                            newSubset = self.parse(data);
+                        } else {
+                            newSubset = self.parse(JSON.parse(data));
                         }
-                    });
-                    return;
-                } else if (updateAll) {
-                    console.log("Update all..");
-                    console.log("From: "+0);
-                    console.log("To: "+numItems);
 
-                    var newCollection = [];
+                        _(newSubset).each(function(obj, index){
+                            obj.orderId = from+index;
+                        });
 
+                        self.freshen(from, to, newSubset);
+
+                        if (getFullCollection) {
+                            success.call(this, self, self);
+                        } else {
+                            subsetCollection = self.getSubset(from, to);
+                            success.call(this, subsetCollection, self);
+                            return subsetCollection;
+                        }
+                    },
+                    error: function(e) {
+                        error.call(this, e, self);
+                    }
+                });
+                return;
+            } else if (updateAll) {
+                console.log("Update all..");
+                console.log("From: "+0);
+                console.log("To: "+numItems);
+
+                var newCollection = [];
+
+                for (var i=0; i<numItems; i = (i+1)*limit) {
+                    console.log("Updating from "+i+" to "+numItems);
                     $.ajax({
                         type: 'GET',
                         url:  self.url(),
@@ -100,17 +101,22 @@ define([
                         }),
                         dataType: 'json',
                         success: function (data) {
-                            var newSubset = self.parse(data);
+                            var newSubset = null;
+                            if (data instanceof Object) {
+                                newSubset = self.parse(data);
+                            } else {
+                                newSubset = self.parse(JSON.parse(data));
+                            }
 
                             _(newSubset).each(function(obj, index){
-                                obj.orderId = from+index;
+                                obj.orderId = index;
                                 newCollection.push(obj);
                             });
 
                             if (newCollection.length >= numItems) {
-                                self.freshen(0, self.length, newCollection);
+                                self.freshen(0, numItems, newCollection);
 
-                                subsetCollection = self.getSubset(0, self.length);
+                                subsetCollection = self.getSubset(0, numItems);
                                 success.call(this, subsetCollection, self);
                                 return subsetCollection;
                             }
@@ -119,32 +125,8 @@ define([
                             error.call(this, e, self);
                         }
                     });
-                    return;
-                } else {                    
-                    console.log("Just get subset..");
-
-                    console.log("From: "+from);
-                    console.log("To: "+to);
-
-                    additionalData = {
-                        offset: from,
-                        limit: to
-                    }
-                    $.ajax({
-                        type: 'GET',
-                        url:  self.url(),
-                        data: $.extend({}, data, additionalData),
-                        success: function (data) {
-                            var justSubset = self.parse(data);
-                            var justSubsetCollection = Backbone.Collection(justSubset);
-
-                            success.call(this, justSubsetCollection, self);
-                        },
-                        error: function(e) {
-                            errorCallback.call(this, e, self);
-                        }
-                    });
                 }
+                return;
             }
         },
 
@@ -188,8 +170,10 @@ define([
             if (subset.length > 0) {
               model = this.get(attrs.id);
               if (model) {
+                // console.log("Updating attributes: "+attrs.name);
                 model.set(attrs); // existing model
               } else {
+                // console.log("Adding new item: "+attrs.name);
                 this.add(attrs, {
                   at: from+_(objects).indexOf(model)
                 });
