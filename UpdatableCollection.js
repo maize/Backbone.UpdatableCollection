@@ -29,6 +29,11 @@ define([
                 to = numItems;
             }
 
+            if (updateAll) {
+                from = 0;
+                to = numItems;
+            }
+
             var subsetCollection = this.getSubset(from, to);
 
             if (!forceUpdate && subsetCollection.length > 0 && subsetCollection.length == (to-from)) {
@@ -77,12 +82,12 @@ define([
                 return;
             } else if (updateAll) {
                 console.log("Update all..");
-                console.log("From: "+0);
-                console.log("To: "+numItems);
+                console.log("From: "+from);
+                console.log("To: "+to);
 
                 var newCollection = [];
 
-                for (var i=0; i<numItems; i = (i+1)*limit) {
+                for (var i=0; i<to; i = (i+1)*limit) {
                     console.log("Updating from "+i+" to "+numItems);
                     $.ajax({
                         type: 'GET',
