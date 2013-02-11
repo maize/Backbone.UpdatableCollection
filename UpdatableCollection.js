@@ -15,8 +15,8 @@ define([
 
             var updateSubset = typeof options.updateSubset !== 'undefined' ? options.updateSubset : false;
             var updateAll = typeof options.updateAll !== 'undefined' ? options.updateAll : false;
+            var forceUpdate = typeof options.forceUpdate !== 'undefined' ? options.forceUpdate : false;
             
-            var getFullCollection = typeof options.getFullCollection !== 'undefined' ? options.getFullCollection : false;
             var numItems = typeof options.numItems !== 'undefined' ? options.numItems : maxLimit;
             
             var from = offset;
@@ -31,14 +31,10 @@ define([
 
             var subsetCollection = this.getSubset(from, to);
 
-            if ((!updateAll || !updateSubset) && subsetCollection.length > 0 && subsetCollection.length == (to-from)) {
+            if (!forceUpdate && subsetCollection.length > 0 && subsetCollection.length == (to-from)) {
                 console.log("Found subset..");
-                if (getFullCollection) {
-                    success.call(this, self, self); // just give simply the whole collection
-                } else {
-                    success.call(this, subsetCollection, self); // give only the subset
-                    return subsetCollection;
-                }
+                success.call(this, subsetCollection, self);
+                return subsetCollection;
             } else if (updateSubset) {
                 console.log("Update subset..");
                 console.log("From: "+from);
@@ -70,13 +66,9 @@ define([
 
                         self.freshen(from, to, newSubset);
 
-                        if (getFullCollection) {
-                            success.call(this, self, self);
-                        } else {
-                            subsetCollection = self.getSubset(from, to);
-                            success.call(this, subsetCollection, self);
-                            return subsetCollection;
-                        }
+                        subsetCollection = self.getSubset(from, to);
+                        success.call(this, subsetCollection, self);
+                        return subsetCollection;
                     },
                     error: function(e) {
                         error.call(this, e, self);
