@@ -34,13 +34,9 @@ define([
                 to = numItems;
             }
 
-            var subsetCollection = this.getSubset(from, to);
+            var subsetCollection = null;
 
-            if (!forceUpdate && subsetCollection.length > 0 && subsetCollection.length == (to-from)) {
-                console.log("Found subset..");
-                success.call(this, subsetCollection, self);
-                return subsetCollection;
-            } else if (updateSubset) {
+            if (updateSubset) {
                 console.log("Update subset..");
                 console.log("From: "+from);
                 console.log("To: "+to);
@@ -125,6 +121,33 @@ define([
                     });
                 }
                 return;
+            } else {
+                $.ajax({
+                    type: 'GET',
+                    url:  self.url(),
+                    data: $.extend({}, data, {
+                        offset: from,
+                        limit: to
+                    }),
+                    dataType: 'json',
+                    success: function (data) {
+                        var newSubset = null;
+                        if (data instanceof Object) {
+                            newSubset = self.parse(data);
+                        } else {
+                            newSubset = self.parse(JSON.parse(data));
+                        }
+
+                        var options = _.clone(self.options);
+                        var newSubsetCollection = new self.constructor(newSubset, options);
+
+                        success.call(this, newSubsetCollection, self);
+                        return newSubsetCollection;
+                    },
+                    error: function(e) {
+                        error.call(this, e, self);
+                    }
+                });
             }
         },
 
