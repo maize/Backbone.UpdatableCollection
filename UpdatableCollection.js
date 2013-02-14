@@ -68,6 +68,9 @@ define([
                         self.freshen(from, to, newSubset);
 
                         subsetCollection = self.getSubset(from, (from+newSubset.length));
+                        subsetCollection = new self.constructor(subsetCollection.models, {
+                            model: self.model
+                        });
 
                         success.call(this, subsetCollection, self);
                         return subsetCollection;
@@ -107,10 +110,15 @@ define([
                                 newCollection.push(obj);
                             });
 
-                            if (newCollection.length >= numItems) {
+                            // Update complete, loaded all items
+                            if (newCollection.length == numItems) {
                                 self.freshen(0, numItems, newCollection);
 
                                 subsetCollection = self.getSubset(0, numItems);
+                                subsetCollection = new self.constructor(subsetCollection.models, {
+                                    model: self.model
+                                });
+                                
                                 success.call(this, subsetCollection, self);
                                 return subsetCollection;
                             }
@@ -158,11 +166,11 @@ define([
                     subset.push(model);
                 }
             });
+
             return new Backbone.Collection(subset);
         },
 
         freshen: function(from, to, objects) {
-            console.log("Freshen..");
             from = typeof from !== 'undefined' ? from : 0;
             to = typeof to !== 'undefined' ? to : 20;
 
@@ -182,7 +190,7 @@ define([
                 _(subset).each(function(model) {
                     var findModel = _(_.where(objects, {id: model.id})).first();
                     if (typeof findModel == "undefined") {
-                        console.log("Removing: "+model.get("name"));
+                        // console.log("Removing: "+model.get("name"));
                         this.remove(model);
                     }
                 }, this);
@@ -193,12 +201,12 @@ define([
                 if (subset.length > 0) {
                     model = this.get(attrs.id);
                     if (model) {
-                        console.log("Updating attributes: "+attrs.name);
-                        console.log("OrderID: "+attrs.orderId);
+                        // console.log("Updating attributes: "+attrs.name);
+                        // console.log("OrderID: "+attrs.orderId);
                         model.set(attrs); // existing model
                     } else {
-                        console.log("Adding new item: "+attrs.name);
-                        console.log("OrderID: "+attrs.orderId);
+                        // console.log("Adding new item: "+attrs.name);
+                        // console.log("OrderID: "+attrs.orderId);
                         this.add(attrs);
                     }
                 } else {
