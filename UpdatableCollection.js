@@ -86,47 +86,48 @@ define([
                 console.log("To: "+to);
 
                 var newCollection = [];
+                var stop = Math.ceil(numItems/maxLimit);
+                console.log(stop);
 
-                for (var i=0; i<to; i = (i+1)*limit) {
-                    console.log("Updating from "+i+" to "+numItems);
-                    $.ajax({
-                        type: 'GET',
-                        url:  self.url(),
-                        data: $.extend({}, data, {
-                            offset: 0,
-                            limit: maxLimit
-                        }),
-                        dataType: 'json',
-                        success: function (data) {
-                            var newSubset = null;
-                            if (data instanceof Object) {
-                                newSubset = self.parse(data);
-                            } else {
-                                newSubset = self.parse(JSON.parse(data));
-                            }
+                for (var i=0; i<stop; i++) {
+                    (function(i) {
+                      $.ajax(
+                        {
+                            type: 'GET',
+                            url:  self.url(),
+                            data: $.extend({}, data, {
+                                offset: i*maxLimit,
+                                limit: maxLimit
+                            }),
+                            dataType: 'json',
+                            success: function(data) { 
+                                var newSubset = null;
+                                if (data instanceof Object) {
+                                    newSubset = self.parse(data);
+                                } else {
+                                    newSubset = self.parse(JSON.parse(data));
+                                }
 
-                            _(newSubset).each(function(obj, index){
-                                obj.orderId = index;
-                                newCollection.push(obj);
-                            });
-
-                            // Update complete, loaded all items
-                            if (newCollection.length == numItems) {
-                                self.freshen(0, numItems, newCollection);
-
-                                subsetCollection = self.getSubset(0, numItems);
-                                subsetCollection = new self.constructor(subsetCollection.models, {
-                                    model: self.model
+                                _(newSubset).each(function(obj, index){
+                                    obj.orderId = index;
+                                    newCollection.push(obj);
                                 });
-                                
-                                success.call(this, subsetCollection, self);
-                                return subsetCollection;
-                            }
-                        },
-                        error: function(e) {
-                            error.call(this, e, self);
-                        }
-                    });
+
+                                // Update complete, loaded all items
+                                if (newCollection.length == numItems) {
+                                    self.freshen(0, numItems, newCollection);
+
+                                    subsetCollection = self.getSubset(0, numItems);
+                                    subsetCollection = new self.constructor(subsetCollection.models, {
+                                        model: self.model
+                                    });
+                                    
+                                    success.call(this, subsetCollection, self);
+                                    return subsetCollection;
+                                }
+                            } 
+                        });  
+                    })(i);
                 }
                 return;
             } else {
