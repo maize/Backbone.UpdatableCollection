@@ -68,6 +68,7 @@ define([
                         self.freshen(from, to, newSubset);
 
                         subsetCollection = self.getSubset(from, (from+newSubset.length));
+                        console.log(subsetCollection);
                         subsetCollection = new self.constructor(subsetCollection.models, {
                             model: self.model
                         });
@@ -87,7 +88,6 @@ define([
 
                 var newCollection = [];
                 var stop = Math.ceil(numItems/maxLimit);
-                console.log(stop);
 
                 for (var i=0; i<stop; i++) {
                     (function(i) {
@@ -163,7 +163,7 @@ define([
         getSubset: function(from, to) {
             var subset = [];
             this.each(function(model) {
-                if (model.get("orderId") >= from && model.get("orderId") < to) {
+                if (model.get("orderId") != null && model.get("orderId") >= from && model.get("orderId") < to) {
                     subset.push(model);
                 }
             });
@@ -202,11 +202,11 @@ define([
                 if (subset.length > 0) {
                     model = this.get(attrs.id);
                     if (model) {
-                        // console.log("Updating attributes: "+attrs.name);
+                        console.log("Updating attributes: "+attrs.name);
                         // console.log("OrderID: "+attrs.orderId);
                         model.set(attrs); // existing model
                     } else {
-                        // console.log("Adding new item: "+attrs.name);
+                        console.log("Adding new item: "+attrs.name);
                         // console.log("OrderID: "+attrs.orderId);
                         this.add(attrs);
                     }
