@@ -39,12 +39,7 @@ define([
             if (updateSubset) {
                 console.log("Update subset..");
                 console.log("From: "+from);
-                console.log("To: "+to);
-
-                additionalData = {
-                    offset: from,
-                    limit: to
-                }
+                console.log("To: "+(from+limit));
 
                 $.ajax({
                     type: 'GET',
@@ -68,7 +63,6 @@ define([
                         self.freshen(from, to, newSubset);
 
                         subsetCollection = self.getSubset(from, (from+newSubset.length));
-                        console.log(subsetCollection);
                         subsetCollection = new self.constructor(subsetCollection.models, {
                             model: self.model
                         });
